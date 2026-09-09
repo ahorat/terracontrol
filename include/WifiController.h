@@ -56,9 +56,15 @@ private:
   // kicked off from loop() once WiFi.status() reports connected.
   bool _mdnsStarted = false;
 
+  // Status LED blink state
+  uint32_t _lastLedToggle = 0;
+  bool _ledOn = false;
+  uint8_t _lastLedR = 255, _lastLedG = 255, _lastLedB = 255; // unreachable sentinel, forces first write
+
   void startAp();
   void startSta();
   void handleResetButton();
   void handleReconnect();
   void restartMdns();
+  void updateStatusLed();
 };

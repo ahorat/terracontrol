@@ -1,6 +1,7 @@
 #include "WifiController.h"
 #include "Config.h"
 #include <ESPmDNS.h>
+#include <esp32-hal-rgb-led.h>
 
 static const uint8_t DNS_PORT = 53;
 
@@ -101,6 +102,33 @@ void WifiController::loop() {
     } else {
       _mdnsStarted = false; // re-announce once reconnected
     }
+  }
+  updateStatusLed();
+}
+
+void WifiController::updateStatusLed() {
+  uint32_t now = millis();
+  if (now - _lastLedToggle >= RGB_LED_BLINK_INTERVAL_MS) {
+    _lastLedToggle = now;
+    _ledOn = !_ledOn;
+  }
+
+  uint8_t r = 0, g = 0, b = 0;
+  if (_ledOn) {
+    if (!_creds->hasCredentials()) {
+      r = RGB_LED_BRIGHTNESS; // red: no WiFi configured
+    } else if (!staConnected()) {
+      b = RGB_LED_BRIGHTNESS; // blue: configured, not (yet) connected
+    } else {
+      g = RGB_LED_BRIGHTNESS; // green: configured and connected
+    }
+  }
+
+  if (r != _lastLedR || g != _lastLedG || b != _lastLedB) {
+    rgbLedWrite(RGB_LED_PIN, r, g, b);
+    _lastLedR = r;
+    _lastLedG = g;
+    _lastLedB = b;
   }
 }
 

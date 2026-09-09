@@ -26,6 +26,13 @@ static const uint8_t I2C_SDA_PIN = 21;
 static const uint8_t I2C_SCL_PIN = 22;
 static const uint8_t AT24C32_I2C_ADDR = 0x57;
 
+// Onboard WS2812 RGB LED, used as a WiFi status indicator (see
+// WifiController): red = not configured, blue = configured but not
+// connected, green = configured and connected. Blinks at ~0.5Hz.
+static const uint8_t RGB_LED_PIN = 8;
+static const uint8_t RGB_LED_BRIGHTNESS = 40; // 0-255, kept low to avoid glare
+static const uint32_t RGB_LED_BLINK_INTERVAL_MS = 1000; // toggle every 1s -> ~0.5Hz
+
 // ---------------------------------------------------------------------------
 // Location: Bern, Switzerland (fixed, no GPS/manual entry per spec)
 // ---------------------------------------------------------------------------
