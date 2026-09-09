@@ -1,5 +1,6 @@
 #include "WifiController.h"
 #include "Config.h"
+#include <ESPmDNS.h>
 
 static const uint8_t DNS_PORT = 53;
 
@@ -21,6 +22,8 @@ void WifiController::startAp() {
   WiFi.softAP(AP_SSID, strlen(AP_PASSWORD) ? AP_PASSWORD : nullptr);
   _dnsServer.start(DNS_PORT, "*", AP_LOCAL_IP);
   _mode = Mode::AP;
+  _mdnsStarted = false;
+  restartMdns();
   Serial.println("[net] AP mode: " + String(AP_SSID) + " @ " + AP_LOCAL_IP.toString());
 }
 
@@ -32,8 +35,18 @@ void WifiController::startSta() {
   WiFi.mode(WIFI_STA);
   WiFi.begin(_creds->ssid().c_str(), _creds->password().c_str());
   _mode = Mode::STA;
+  _mdnsStarted = false; // no IP yet; loop() starts mDNS once connected
   _lastReconnectAttempt = millis();
   Serial.println("[net] STA mode, connecting to " + _creds->ssid());
+}
+
+void WifiController::restartMdns() {
+  MDNS.end();
+  if (MDNS.begin(MDNS_HOSTNAME)) {
+    MDNS.addService("http", "tcp", 80);
+    Serial.println("[net] mDNS: http://" + String(MDNS_HOSTNAME) + ".local/");
+  }
+  _mdnsStarted = true;
 }
 
 bool WifiController::applyNewCredentials(const String &ssid, const String &password) {
@@ -82,6 +95,12 @@ void WifiController::loop() {
   handleReconnect();
   if (_mode == Mode::AP) {
     _dnsServer.processNextRequest();
+  } else if (_mode == Mode::STA) {
+    if (WiFi.status() == WL_CONNECTED) {
+      if (!_mdnsStarted) restartMdns();
+    } else {
+      _mdnsStarted = false; // re-announce once reconnected
+    }
   }
 }
 

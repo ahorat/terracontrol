@@ -51,8 +51,14 @@ private:
   // Background reconnect
   uint32_t _lastReconnectAttempt = 0;
 
+  // mDNS is (re)started once an interface actually has an IP; STA doesn't
+  // have one yet when startSta() returns (connection is async), so it's
+  // kicked off from loop() once WiFi.status() reports connected.
+  bool _mdnsStarted = false;
+
   void startAp();
   void startSta();
   void handleResetButton();
   void handleReconnect();
+  void restartMdns();
 };
