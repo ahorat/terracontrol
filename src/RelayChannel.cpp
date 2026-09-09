@@ -15,10 +15,12 @@ static bool inMinuteWindow(uint16_t minuteOfDay, uint16_t start, uint16_t end) {
 
 void RelayChannel::begin(uint8_t pin) {
   _pin = pin;
-  // Set the idle (off) output level before switching the pin to OUTPUT, to
-  // avoid a brief relay glitch while the pin is still floating/input.
-  digitalWrite(_pin, RELAY_ACTIVE_LOW ? HIGH : LOW);
+  // pinMode() must come first: on current arduino-esp32, digitalWrite() on a
+  // pin not yet claimed as GPIO is rejected outright (silently does nothing),
+  // which left the pin on pinMode(OUTPUT)'s default LOW level - energizing
+  // an active-LOW relay immediately at boot despite _relayOn saying false.
   pinMode(_pin, OUTPUT);
+  digitalWrite(_pin, RELAY_ACTIVE_LOW ? HIGH : LOW);
   _relayOn = false; // matches the level just written; failsafe default
   Serial.printf("[relay] pin %u init -> OFF\n", _pin);
 }

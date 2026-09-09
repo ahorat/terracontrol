@@ -43,7 +43,7 @@ static const IPAddress AP_SUBNET(255, 255, 255, 0);
 
 // Reachable as http://<MDNS_HOSTNAME>.local/ once on the target WiFi, since
 // the device's DHCP-assigned IP isn't known in advance.
-static const char *MDNS_HOSTNAME = "relaycontroller";
+static const char *MDNS_HOSTNAME = "terracontrol";
 
 static const uint32_t WIFI_RECONNECT_INTERVAL_MS = 5UL * 60UL * 1000UL; // ~5 min
 
