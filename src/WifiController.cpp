@@ -1,9 +1,9 @@
-#include "NetworkManager.h"
+#include "WifiController.h"
 #include "Config.h"
 
 static const uint8_t DNS_PORT = 53;
 
-void NetworkManager::begin(WifiCredStore *credStore) {
+void WifiController::begin(WifiCredStore *credStore) {
   _creds = credStore;
   pinMode(RESET_BUTTON_PIN, INPUT_PULLUP);
 
@@ -14,7 +14,7 @@ void NetworkManager::begin(WifiCredStore *credStore) {
   }
 }
 
-void NetworkManager::startAp() {
+void WifiController::startAp() {
   WiFi.disconnect(true, true);
   WiFi.mode(WIFI_AP);
   WiFi.softAPConfig(AP_LOCAL_IP, AP_GATEWAY, AP_SUBNET);
@@ -24,7 +24,7 @@ void NetworkManager::startAp() {
   Serial.println("[net] AP mode: " + String(AP_SSID) + " @ " + AP_LOCAL_IP.toString());
 }
 
-void NetworkManager::startSta() {
+void WifiController::startSta() {
   // Non-blocking: WiFi.begin() kicks off the connection asynchronously.
   // Success/failure is picked up via WiFi.status() from loop()/handleReconnect()
   // and the status JSON endpoint, so this never stalls relay scheduling.
@@ -36,18 +36,18 @@ void NetworkManager::startSta() {
   Serial.println("[net] STA mode, connecting to " + _creds->ssid());
 }
 
-bool NetworkManager::applyNewCredentials(const String &ssid, const String &password) {
+bool WifiController::applyNewCredentials(const String &ssid, const String &password) {
   if (ssid.length() == 0) return false;
   _creds->save(ssid, password);
   startSta();
   return true;
 }
 
-void NetworkManager::forceApMode() {
+void WifiController::forceApMode() {
   startAp();
 }
 
-void NetworkManager::handleResetButton() {
+void WifiController::handleResetButton() {
   bool pressed = digitalRead(RESET_BUTTON_PIN) == LOW;
 
   if (pressed) {
@@ -65,7 +65,7 @@ void NetworkManager::handleResetButton() {
   }
 }
 
-void NetworkManager::handleReconnect() {
+void WifiController::handleReconnect() {
   if (_mode != Mode::STA) return;
   if (WiFi.status() == WL_CONNECTED) return;
 
@@ -77,7 +77,7 @@ void NetworkManager::handleReconnect() {
   }
 }
 
-void NetworkManager::loop() {
+void WifiController::loop() {
   handleResetButton();
   handleReconnect();
   if (_mode == Mode::AP) {
@@ -85,7 +85,7 @@ void NetworkManager::loop() {
   }
 }
 
-String NetworkManager::statusSummary() const {
+String WifiController::statusSummary() const {
   if (_mode == Mode::AP) {
     return "Access-Point-Modus (" + String(AP_SSID) + ")";
   }

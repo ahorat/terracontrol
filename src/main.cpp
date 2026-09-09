@@ -9,13 +9,13 @@
 #include "WifiCredStore.h"
 #include "RtcClock.h"
 #include "RelayChannel.h"
-#include "NetworkManager.h"
+#include "WifiController.h"
 #include "WebPortal.h"
 
 static RtcClock rtcClock;
 static EepromStore eepromStore;
 static WifiCredStore wifiCreds;
-static NetworkManager netManager;
+static WifiController netManager;
 static WebPortal webPortal;
 static RelayChannel channels[CHANNEL_COUNT];
 

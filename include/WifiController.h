@@ -8,7 +8,9 @@
 // Owns WiFi AP/STA mode switching, the reset-button-triggered fallback to AP
 // mode, the background reconnect timer, and the AP-mode captive portal DNS
 // redirect. The relay scheduler never depends on this class's state.
-class NetworkManager {
+// Named WifiController (not NetworkManager) to avoid colliding with the
+// arduino-esp32 core's own global ::NetworkManager class (WiFi.h -> Network.h).
+class WifiController {
 public:
   enum class Mode { AP, STA };
 
@@ -32,7 +34,7 @@ public:
   bool ntpEverSynced() const { return _lastNtpSyncEpoch != 0; }
 
   // Set by main.cpp right after a successful NTP sync so the status page can
-  // display it; NetworkManager itself does not perform NTP sync timing here
+  // display it; WifiController itself does not perform NTP sync timing here
   // (see main.cpp) to keep RTC/NTP logic in one place.
   void noteNtpSync(time_t utcEpoch) { _lastNtpSyncEpoch = utcEpoch; }
 

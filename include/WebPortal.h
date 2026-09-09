@@ -2,25 +2,25 @@
 
 #include <ESPAsyncWebServer.h>
 #include "RelayChannel.h"
-#include "NetworkManager.h"
+#include "WifiController.h"
 #include "RtcClock.h"
 #include "EepromStore.h"
 
 // Serves the embedded web UI and its JSON API. Owns no scheduling logic
 // itself - it only reads/writes the ChannelConfig array (persisting via
-// EepromStore) and reads status from the RelayChannel/RtcClock/NetworkManager
+// EepromStore) and reads status from the RelayChannel/RtcClock/WifiController
 // it is given.
 class WebPortal {
 public:
   void begin(RelayChannel channels[CHANNEL_COUNT], RtcClock *rtc, EepromStore *store,
-             NetworkManager *net);
+             WifiController *net);
 
 private:
   AsyncWebServer _server{80};
   RelayChannel *_channels = nullptr;
   RtcClock *_rtc = nullptr;
   EepromStore *_store = nullptr;
-  NetworkManager *_net = nullptr;
+  WifiController *_net = nullptr;
 
   void setupRoutes();
 

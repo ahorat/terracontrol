@@ -42,7 +42,7 @@ static ChannelConfig channelConfigFromJson(JsonVariantConst obj, const ChannelCo
   return c;
 }
 
-void WebPortal::begin(RelayChannel channels[CHANNEL_COUNT], RtcClock *rtc, EepromStore *store, NetworkManager *net) {
+void WebPortal::begin(RelayChannel channels[CHANNEL_COUNT], RtcClock *rtc, EepromStore *store, WifiController *net) {
   _channels = channels;
   _rtc = rtc;
   _store = store;
@@ -186,7 +186,7 @@ void WebPortal::handleGetConfig(AsyncWebServerRequest *request) {
 
 void WebPortal::handleGetWifiStatus(AsyncWebServerRequest *request) {
   JsonDocument doc;
-  doc["mode"] = _net->mode() == NetworkManager::Mode::AP ? "AP" : "STA";
+  doc["mode"] = _net->mode() == WifiController::Mode::AP ? "AP" : "STA";
   doc["connected"] = _net->staConnected();
   doc["summary"] = _net->statusSummary();
   String out;
