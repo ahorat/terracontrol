@@ -125,7 +125,7 @@ void WifiController::updateStatusLed() {
   }
 
   if (r != _lastLedR || g != _lastLedG || b != _lastLedB) {
-    rgbLedWrite(RGB_LED_PIN, r, g, b);
+    rgbLedWriteOrdered(RGB_LED_PIN, RGB_LED_COLOR_ORDER, r, g, b);
     _lastLedR = r;
     _lastLedG = g;
     _lastLedB = b;

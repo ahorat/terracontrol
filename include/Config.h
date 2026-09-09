@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <esp32-hal-rgb-led.h>
 
 // ---------------------------------------------------------------------------
 // Hardware pin assignment (freely reassignable, see Aufgabenbeschreibung 5.)
@@ -31,6 +32,9 @@ static const uint8_t AT24C32_I2C_ADDR = 0x57;
 // connected, green = configured and connected. Blinks at ~0.5Hz.
 static const uint8_t RGB_LED_PIN = 8;
 static const uint8_t RGB_LED_BRIGHTNESS = 40; // 0-255, kept low to avoid glare
+// This board's onboard LED wants RGB byte order, not the WS2812B-typical
+// GRB that rgbLedWrite()'s default assumes (confirmed: red/green were swapped).
+static const rgb_led_color_order_t RGB_LED_COLOR_ORDER = LED_COLOR_ORDER_RGB;
 static const uint32_t RGB_LED_BLINK_INTERVAL_MS = 1000; // toggle every 1s -> ~0.5Hz
 
 // ---------------------------------------------------------------------------
