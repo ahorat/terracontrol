@@ -34,6 +34,11 @@ public:
   // given local date.
   static long localUtcOffsetSeconds(const DateTime &localDate);
 
+  // Converts a true UTC instant to Europe/Zurich local time (DST-aware,
+  // using the correct UTC-instant EU rule). Used for setFromUtcEpoch() and
+  // for displaying any other UTC timestamp (e.g. last-NTP-sync) as local.
+  static DateTime utcToLocal(const DateTime &utc);
+
 private:
   RTC_DS3231 _rtc;
   bool _present = false;

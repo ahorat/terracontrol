@@ -177,8 +177,13 @@ async function loadStatus(){
         ${c.override.active?`<div class="row"><span class="muted">Override</span>
           <span>${c.override.state?'AN':'AUS'} ${c.override.indefinite?'(bis auf Weiteres)':'bis '+c.override.endsAt}</span></div>`:''}
         <div class="row">
-          <span class="muted">Override-Dauer (Min, 0 = bis auf Weiteres)</span>
-          <input type="number" min="0" value="5" id="dur-${c.index}" style="width:70px">
+          <span class="muted">Override-Dauer (0:0 = bis auf Weiteres)</span>
+          <span style="display:flex;gap:4px;align-items:center">
+            <input type="number" min="0" value="5" id="dur-min-${c.index}" style="width:60px" title="Minuten">
+            <span class="muted">Min</span>
+            <input type="number" min="0" max="59" value="0" id="dur-sec-${c.index}" style="width:60px" title="Sekunden">
+            <span class="muted">Sek</span>
+          </span>
         </div>
         <div class="btn-row">
           <button class="btn" onclick="override(${c.index},'on')">Override AN</button>
@@ -194,9 +199,10 @@ async function loadStatus(){
 }
 
 async function override(index, action){
-  const minutes = parseInt($('dur-'+index).value, 10) || 0;
+  const minutes = parseInt($('dur-min-'+index).value, 10) || 0;
+  const seconds = parseInt($('dur-sec-'+index).value, 10) || 0;
   await fetch('/api/override', {method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({index, action, durationSeconds: minutes*60})});
+    body: JSON.stringify({index, action, durationSeconds: minutes*60 + seconds})});
   toast('Override aktualisiert');
   loadStatus();
 }

@@ -199,7 +199,9 @@ void WebPortal::handleGetTime(AsyncWebServerRequest *request) {
   bool valid = _rtc->isTimeValid();
   doc["rtcValid"] = valid;
   doc["now"] = formatDateTime(_rtc->now());
-  doc["ntpLastSync"] = _net->ntpEverSynced() ? formatDateTime(DateTime((uint32_t)_net->lastNtpSyncEpoch())) : "";
+  doc["ntpLastSync"] = _net->ntpEverSynced()
+      ? formatDateTime(RtcClock::utcToLocal(DateTime((uint32_t)_net->lastNtpSyncEpoch())))
+      : "";
   String out;
   serializeJson(doc, out);
   request->send(200, "application/json", out);

@@ -59,11 +59,13 @@ long RtcClock::localUtcOffsetSeconds(const DateTime &localDate) {
   return dst ? 7200L : 3600L;
 }
 
+DateTime RtcClock::utcToLocal(const DateTime &utc) {
+  long offset = isDstForUtcInstant(utc) ? 7200L : 3600L;
+  return utc + TimeSpan((int32_t)offset);
+}
+
 void RtcClock::setFromUtcEpoch(time_t utcEpoch) {
   if (!_present) return;
   DateTime utc((uint32_t)utcEpoch);
-  bool dst = isDstForUtcInstant(utc);
-  long offset = dst ? 7200L : 3600L;
-  DateTime local = utc + TimeSpan((int32_t)offset);
-  _rtc.adjust(local);
+  _rtc.adjust(utcToLocal(utc));
 }
