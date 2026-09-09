@@ -24,12 +24,10 @@ private:
 
   void setupRoutes();
 
+  // POST handlers (/api/config, /api/override, /api/wifi, /api/time) are
+  // registered directly as lambdas in setupRoutes() via AsyncCallbackJsonWebHandler.
   void handleStatus(AsyncWebServerRequest *request);
   void handleGetConfig(AsyncWebServerRequest *request);
-  void handlePostConfig(AsyncWebServerRequest *request, uint8_t *data, size_t len);
-  void handlePostOverride(AsyncWebServerRequest *request, uint8_t *data, size_t len);
   void handleGetWifiStatus(AsyncWebServerRequest *request);
-  void handlePostWifi(AsyncWebServerRequest *request, uint8_t *data, size_t len);
   void handleGetTime(AsyncWebServerRequest *request);
-  void handlePostTime(AsyncWebServerRequest *request, uint8_t *data, size_t len);
 };
