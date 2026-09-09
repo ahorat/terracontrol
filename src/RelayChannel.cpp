@@ -20,12 +20,14 @@ void RelayChannel::begin(uint8_t pin) {
   digitalWrite(_pin, RELAY_ACTIVE_LOW ? HIGH : LOW);
   pinMode(_pin, OUTPUT);
   _relayOn = false; // matches the level just written; failsafe default
+  Serial.printf("[relay] pin %u init -> OFF\n", _pin);
 }
 
 void RelayChannel::applyRelay(bool on) {
   _relayOn = on;
   bool pinHigh = RELAY_ACTIVE_LOW ? !on : on;
   digitalWrite(_pin, pinHigh ? HIGH : LOW);
+  Serial.printf("[relay] pin %u (mode=%d) -> %s\n", _pin, (int)_cfg.mode, on ? "ON" : "OFF");
 }
 
 void RelayChannel::forceOff() {

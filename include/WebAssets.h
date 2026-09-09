@@ -166,7 +166,13 @@ async function loadStatus(){
     const d = await r.json();
     $('conn-pill').textContent = d.rtcValid ? 'RTC OK' : 'RTC UNGÜLTIG';
     $('conn-pill').className = d.rtcValid ? 'ok' : '';
-    const html = d.channels.map(c=>`
+    // Preserve any in-progress duration input across this refresh - the
+    // periodic poll below would otherwise blow away what the user just typed.
+    const prevDur = d.channels.map(c => ({
+      min: document.getElementById('dur-min-'+c.index)?.value,
+      sec: document.getElementById('dur-sec-'+c.index)?.value,
+    }));
+    const html = d.channels.map((c,i)=>`
       <div class="card">
         <div class="row">
           <h2 style="margin:0">Kanal ${c.index+1}</h2>
@@ -179,9 +185,9 @@ async function loadStatus(){
         <div class="row">
           <span class="muted">Override-Dauer (0:0 = bis auf Weiteres)</span>
           <span style="display:flex;gap:4px;align-items:center">
-            <input type="number" min="0" value="5" id="dur-min-${c.index}" style="width:60px" title="Minuten">
+            <input type="number" min="0" value="${prevDur[i].min ?? 5}" id="dur-min-${c.index}" style="width:60px" title="Minuten">
             <span class="muted">Min</span>
-            <input type="number" min="0" max="59" value="0" id="dur-sec-${c.index}" style="width:60px" title="Sekunden">
+            <input type="number" min="0" max="59" value="${prevDur[i].sec ?? 0}" id="dur-sec-${c.index}" style="width:60px" title="Sekunden">
             <span class="muted">Sek</span>
           </span>
         </div>
