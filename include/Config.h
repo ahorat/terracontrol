@@ -56,6 +56,10 @@ static const IPAddress AP_SUBNET(255, 255, 255, 0);
 // the device's DHCP-assigned IP isn't known in advance.
 static const char *MDNS_HOSTNAME = "terracontrol";
 
+// Grace period between confirming a "disable WiFi" request over HTTP and
+// actually switching the radio off, so the response has time to reach the browser.
+static const uint32_t WIFI_DISABLE_DEFER_MS = 500;
+
 static const uint32_t WIFI_RECONNECT_INTERVAL_MS = 5UL * 60UL * 1000UL; // ~5 min
 
 // ---------------------------------------------------------------------------

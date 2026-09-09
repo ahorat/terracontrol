@@ -101,6 +101,16 @@ input[type=datetime-local],select{
       <p class="hint">Nach dem Verbinden ist die Oberfläche über die neue IP-Adresse
       im Zielnetzwerk erreichbar (siehe Router). Bei Fehlschlag bleibt das Gerät im AP-Modus.</p>
     </div>
+    <div class="card">
+      <h2>WLAN deaktivieren</h2>
+      <p class="hint">Schaltet das WLAN-Modul vollständig aus. Die Relaissteuerung läuft
+      unverändert nach RTC weiter. Diese Oberfläche ist danach nicht mehr erreichbar -
+      zum Reaktivieren kurz den Reset-Taster drücken (normaler Verbindungsaufbau) oder
+      3 Sekunden halten (direkt in den AP-Modus).</p>
+      <div class="btn-row">
+        <button class="btn danger" onclick="disableWifi()">WLAN deaktivieren</button>
+      </div>
+    </div>
   </section>
 
   <section id="tab-time" hidden>
@@ -345,6 +355,14 @@ async function forceAp(){
     body: JSON.stringify({forceAp:true})});
   toast('AP-Modus aktiviert');
   setTimeout(loadWifi, 1500);
+}
+
+async function disableWifi(){
+  if(!confirm('WLAN wirklich deaktivieren? Diese Oberfläche ist danach nicht mehr erreichbar, ' +
+    'bis der Reset-Taster gedrückt wird. Die Relais laufen unverändert weiter.')) return;
+  await fetch('/api/wifi', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({disableWifi:true})});
+  toast('WLAN wird deaktiviert...');
 }
 
 // ---------------- Time ----------------

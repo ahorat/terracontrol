@@ -30,13 +30,6 @@ static void onNtpSync(struct timeval *tv) {
 
 void setup() {
   Serial.begin(115200);
-  // ESP32-C6 has no external USB-UART bridge - the native USB port
-  // re-enumerates on every reset/power-cycle, so a monitor reattaching after
-  // that would otherwise miss these early boot lines entirely. This pause
-  // gives it time to reconnect first. Harmless in normal (unattended)
-  // operation - it only delays the very first relay evaluation by a few
-  // seconds, not anything time-critical.
-  delay(8000);
   Serial.println("\n[boot] WiFi 4-Kanal Relaiscontroller");
 
   Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);

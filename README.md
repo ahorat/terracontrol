@@ -89,10 +89,10 @@ consequences, both already handled in `platformio.ini`/`main.cpp`:
 - `-DARDUINO_USB_MODE=1 -DARDUINO_USB_CDC_ON_BOOT=1` are required for
   `Serial` to actually route over USB-C at all.
 - Every reset or power-cycle makes the USB device re-enumerate, so any
-  attached monitor session drops and has to reattach. `setup()` waits 8s
-  before printing anything, to give a monitor time to reconnect first. To
-  reliably capture the very first boot lines, start the monitor in a retry
-  loop *before* plugging in / resetting the board:
+  attached monitor session drops and has to reattach — the very first boot
+  lines print immediately and can be missed while the monitor reconnects.
+  To reliably capture them, start the monitor in a retry loop *before*
+  plugging in / resetting the board:
 
   ```
   until pio device monitor -e esp32-c6-zero; do sleep 0.5; done
@@ -114,6 +114,22 @@ consequences, both already handled in `platformio.ini`/`main.cpp`:
    unaffected (it only depends on the RTC); it retries reconnecting in the
    background roughly every 5 minutes.
 
+### Turning WiFi off entirely
+
+The **WLAN** tab has a "WLAN deaktivieren" button that switches the radio
+off completely (`WiFi.mode(WIFI_OFF)`) — useful if you want to run the
+controller as a purely standalone RTC-scheduled device for a while. Relay
+scheduling is unaffected, since it only depends on the RTC. This state is
+persisted (survives reboots/power loss) and can **only** be undone with the
+physical reset button, since the web UI itself becomes unreachable the
+moment WiFi drops:
+
+- **Tap** the reset button (release before 3s) → wakes up into normal
+  operation (reconnects to the saved network, or opens the AP if none is
+  saved).
+- **Hold** the reset button ≥3s → wakes up straight into AP mode, same as
+  the always-available reset-to-AP gesture above.
+
 ## Status LED
 
 The board's onboard WS2812 RGB LED blinks at ~0.5Hz (once per second) as a
@@ -125,6 +141,7 @@ web UI:
 | 🔴 Red | No WiFi credentials saved yet (AP mode, needs first-time setup) |
 | 🔵 Blue | Credentials saved, but not currently connected (includes AP mode forced via the reset button, and STA mode while reconnecting) |
 | 🟢 Green | Connected |
+| ⚫ Off (steady, no blink) | WiFi intentionally disabled via the web UI — see [Turning WiFi off entirely](#turning-wifi-off-entirely) |
 
 Driven via the ESP32 core's built-in `rgbLedWriteOrdered()` (no external
 library) in `WifiController::updateStatusLed()`. If a future board revision
@@ -166,8 +183,8 @@ for the exact request/response shapes).
   immediately to the AT24C32 EEPROM on the RTC module whenever changed via
   the web UI, so it survives power loss and firmware reflashes (it's a
   separate physical chip from the ESP32's own flash).
-- **WiFi credentials** are stored in the ESP32's own NVS (via `Preferences`),
-  separately from the RTC EEPROM.
+- **WiFi credentials, and whether WiFi is user-disabled**, are stored in the
+  ESP32's own NVS (via `Preferences`), separately from the RTC EEPROM.
 - **Manual overrides are not persisted** — they're runtime-only and reset
   on reboot.
 
@@ -198,12 +215,6 @@ GPIO pin and per-channel `ChannelConfig` differ.
   feature may need a custom partition table (e.g. a single larger app slot,
   since OTA isn't a requirement here) — see `board_build.partitions` in
   PlatformIO's docs if you hit "region overflowed" at link time.
-- **8-second boot delay** (`delay(8000)` at the top of `setup()` in
-  `main.cpp`) exists purely to give a USB serial monitor time to reattach
-  after the native-USB re-enumeration on reset (see Serial console above).
-  It doesn't affect correctness (relays stay in failsafe-off until the RTC
-  is read regardless), but it can be shortened or removed once you're done
-  with active debugging.
 - **DST rule is a fixed EU calculation** (last Sunday of March/October), not
   looked up from a timezone database — correct for Switzerland indefinitely
   unless EU DST rules change. The local-date-based variant used for

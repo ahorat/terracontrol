@@ -9,7 +9,14 @@ void WifiController::begin(WifiCredStore *credStore) {
   _creds = credStore;
   pinMode(RESET_BUTTON_PIN, INPUT_PULLUP);
 
-  if (_creds->hasCredentials()) {
+  if (_creds->wifiDisabled()) {
+    // Left off by the user - stays off (radio never started) until the
+    // reset button is pressed. Not calling disableWifi() here to avoid an
+    // unnecessary NVS rewrite of the flag on every single boot.
+    Serial.println("[net] WiFi disabled - staying off until reset button is pressed");
+    WiFi.mode(WIFI_OFF);
+    _mode = Mode::OFF;
+  } else if (_creds->hasCredentials()) {
     startSta();
   } else {
     startAp();
@@ -58,7 +65,32 @@ bool WifiController::applyNewCredentials(const String &ssid, const String &passw
 }
 
 void WifiController::forceApMode() {
+  _creds->setWifiDisabled(false); // an explicit mode change always wakes from "off"
   startAp();
+}
+
+void WifiController::requestDisableWifi() {
+  _disablePending = true;
+  _disablePendingAt = millis() + WIFI_DISABLE_DEFER_MS;
+}
+
+void WifiController::disableWifi() {
+  Serial.println("[net] WiFi disabled by user - will stay off until reset button is pressed");
+  _dnsServer.stop();
+  WiFi.disconnect(true, true);
+  WiFi.mode(WIFI_OFF);
+  _mode = Mode::OFF;
+  _mdnsStarted = false;
+  _creds->setWifiDisabled(true);
+}
+
+void WifiController::wakeFromDisabled() {
+  _creds->setWifiDisabled(false);
+  if (_creds->hasCredentials()) {
+    startSta();
+  } else {
+    startAp();
+  }
 }
 
 void WifiController::handleResetButton() {
@@ -74,6 +106,13 @@ void WifiController::handleResetButton() {
       forceApMode();
     }
   } else {
+    // Released before reaching the hold threshold: a plain tap. While WiFi
+    // is off, that's the "just turn it back on normally" gesture (holding
+    // is handled above and forces AP mode instead, regardless of _mode).
+    if (_buttonDownSince != 0 && !_buttonHoldHandled && _mode == Mode::OFF) {
+      Serial.println("[net] reset button tapped, waking WiFi");
+      wakeFromDisabled();
+    }
     _buttonDownSince = 0;
     _buttonHoldHandled = false;
   }
@@ -93,6 +132,12 @@ void WifiController::handleReconnect() {
 
 void WifiController::loop() {
   handleResetButton();
+
+  if (_disablePending && millis() >= _disablePendingAt) {
+    _disablePending = false;
+    disableWifi();
+  }
+
   handleReconnect();
   if (_mode == Mode::AP) {
     _dnsServer.processNextRequest();
@@ -114,7 +159,10 @@ void WifiController::updateStatusLed() {
   }
 
   uint8_t r = 0, g = 0, b = 0;
-  if (_ledOn) {
+  if (_mode == Mode::OFF) {
+    // Steady off: WiFi is intentionally disabled, distinct from the
+    // "configured but not connected" blue blink.
+  } else if (_ledOn) {
     if (!_creds->hasCredentials()) {
       r = RGB_LED_BRIGHTNESS; // red: no WiFi configured
     } else if (!staConnected()) {
@@ -133,6 +181,9 @@ void WifiController::updateStatusLed() {
 }
 
 String WifiController::statusSummary() const {
+  if (_mode == Mode::OFF) {
+    return "WLAN deaktiviert (Reset-Taster zum Reaktivieren)";
+  }
   if (_mode == Mode::AP) {
     return "Access-Point-Modus (" + String(AP_SSID) + ")";
   }

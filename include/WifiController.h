@@ -12,7 +12,7 @@
 // arduino-esp32 core's own global ::NetworkManager class (WiFi.h -> Network.h).
 class WifiController {
 public:
-  enum class Mode { AP, STA };
+  enum class Mode { AP, STA, OFF };
 
   void begin(WifiCredStore *credStore);
 
@@ -28,6 +28,12 @@ public:
   bool applyNewCredentials(const String &ssid, const String &password);
 
   void forceApMode();
+
+  // Turns the WiFi radio off entirely and persists that so it survives
+  // reboots - only the reset button (tap or hold, see handleResetButton())
+  // brings it back. The actual radio shutdown is deferred briefly so the
+  // HTTP response confirming this request can still reach the browser.
+  void requestDisableWifi();
 
   String statusSummary() const;
   time_t lastNtpSyncEpoch() const { return _lastNtpSyncEpoch; }
@@ -61,8 +67,14 @@ private:
   bool _ledOn = false;
   uint8_t _lastLedR = 255, _lastLedG = 255, _lastLedB = 255; // unreachable sentinel, forces first write
 
+  // Deferred WiFi-off: see requestDisableWifi().
+  bool _disablePending = false;
+  uint32_t _disablePendingAt = 0;
+
   void startAp();
   void startSta();
+  void disableWifi();
+  void wakeFromDisabled();
   void handleResetButton();
   void handleReconnect();
   void restartMdns();

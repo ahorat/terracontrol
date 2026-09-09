@@ -111,6 +111,13 @@ void WebPortal::setupRoutes() {
       request->send(200, "application/json", "{\"ok\":true}");
       return;
     }
+    if (json["disableWifi"] | false) {
+      // Respond first - requestDisableWifi() defers the actual radio
+      // shutdown so this response has time to reach the browser.
+      request->send(200, "application/json", "{\"ok\":true}");
+      _net->requestDisableWifi();
+      return;
+    }
     String ssid = json["ssid"] | "";
     String password = json["password"] | "";
     if (ssid.length() == 0) {
@@ -184,9 +191,18 @@ void WebPortal::handleGetConfig(AsyncWebServerRequest *request) {
   request->send(200, "application/json", out);
 }
 
+static const char *wifiModeName(WifiController::Mode mode) {
+  switch (mode) {
+    case WifiController::Mode::AP: return "AP";
+    case WifiController::Mode::STA: return "STA";
+    case WifiController::Mode::OFF:
+    default: return "OFF";
+  }
+}
+
 void WebPortal::handleGetWifiStatus(AsyncWebServerRequest *request) {
   JsonDocument doc;
-  doc["mode"] = _net->mode() == WifiController::Mode::AP ? "AP" : "STA";
+  doc["mode"] = wifiModeName(_net->mode());
   doc["connected"] = _net->staConnected();
   doc["summary"] = _net->statusSummary();
   String out;
