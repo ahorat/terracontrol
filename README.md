@@ -27,6 +27,7 @@ for the original requirements this implements.
 | RTC | DS3231 with AT24C32 EEPROM (I2C breakout) |
 | Relays | 4-channel module, 5V/opto-isolated, **active-LOW** by default |
 | Reset button | Momentary, wired to GND (internal pull-up, active-LOW) |
+| Status LED | Onboard WS2812 RGB LED (no wiring needed) — see [Status LED](#status-led) |
 
 ### Wiring
 
@@ -113,6 +114,23 @@ consequences, both already handled in `platformio.ini`/`main.cpp`:
    unaffected (it only depends on the RTC); it retries reconnecting in the
    background roughly every 5 minutes.
 
+## Status LED
+
+The board's onboard WS2812 RGB LED blinks at ~0.5Hz (once per second) as a
+WiFi state indicator, so you can tell what's going on without opening the
+web UI:
+
+| Color | Meaning |
+|---|---|
+| 🔴 Red | No WiFi credentials saved yet (AP mode, needs first-time setup) |
+| 🔵 Blue | Credentials saved, but not currently connected (includes AP mode forced via the reset button, and STA mode while reconnecting) |
+| 🟢 Green | Connected |
+
+Driven via the ESP32 core's built-in `rgbLedWriteOrdered()` (no external
+library) in `WifiController::updateStatusLed()`. If a future board revision
+uses a different WS2812 byte order and colors come out swapped, adjust
+`RGB_LED_COLOR_ORDER` in `include/Config.h`.
+
 ## Web UI
 
 Single page, four tabs:
@@ -165,13 +183,39 @@ src/                 Implementation + main.cpp (setup/loop)
   RtcClock             DS3231 wrapper, local/UTC conversion, DST rule
   SunTimes             Sunrise/sunset calculation for Bern
   RelayChannel         Per-channel schedule evaluation + override + GPIO
-  WifiController       AP/STA switching, reset button, reconnect, mDNS
+  WifiController       AP/STA switching, reset button, reconnect, mDNS, status LED
   WebPortal/WebAssets  Web UI (embedded HTML/CSS/JS) + JSON API
   main.cpp             Wires everything together; scheduler tick + NTP
 ```
 
 All 4 relay channels share the same `RelayChannel` implementation — only the
 GPIO pin and per-channel `ChannelConfig` differ.
+
+## Known limitations / tuning knobs
+
+- **Flash usage is at ~90%** of the default 1.25MB app partition (4MB flash,
+  two-OTA-slot layout). There's headroom for small additions, but a larger
+  feature may need a custom partition table (e.g. a single larger app slot,
+  since OTA isn't a requirement here) — see `board_build.partitions` in
+  PlatformIO's docs if you hit "region overflowed" at link time.
+- **8-second boot delay** (`delay(8000)` at the top of `setup()` in
+  `main.cpp`) exists purely to give a USB serial monitor time to reattach
+  after the native-USB re-enumeration on reset (see Serial console above).
+  It doesn't affect correctness (relays stay in failsafe-off until the RTC
+  is read regardless), but it can be shortened or removed once you're done
+  with active debugging.
+- **DST rule is a fixed EU calculation** (last Sunday of March/October), not
+  looked up from a timezone database — correct for Switzerland indefinitely
+  unless EU DST rules change. The local-date-based variant used for
+  sunrise/sunset offset selection has one known, intentional simplification:
+  during the one hour that gets repeated on the autumn transition night, it
+  may pick the wrong side of the DST boundary — inconsequential here since
+  it only affects which of two ~1h-apart sun times is used that one night a
+  year.
+- **Relay board polarity and RGB LED byte order** are per-board electrical
+  characteristics, not something firmware can detect automatically — both
+  are exposed as constants in `include/Config.h` (`RELAY_ACTIVE_LOW`,
+  `RGB_LED_COLOR_ORDER`) in case you swap to different hardware.
 
 ## License
 
